@@ -40,8 +40,7 @@ class Imc(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-    def save(self, *args, **kwargs):
-        self.imc = self.current_weight / (self.current_height ** 2)
+    def switch_imc(self):
         if self.imc < 17:
             self.classificacao = self.PESO_MUITO_ABAIXO
         elif self.imc >= 17 and self.imc <= 18.49:
@@ -54,7 +53,11 @@ class Imc(models.Model):
             self.classificacao = self.OBESIDADE_I
         elif self.imc >= 35 and self.imc <= 39.99:
             self.classificacao = self.OBESIDADE_II
-        elif self.imc >= 40:
+        else:
             self.classificacao = self.OBESIDADE_III
 
+
+    def save(self, *args, **kwargs):
+        self.imc = self.current_weight / (self.current_height ** 2)
+        self.set_imc_classification()
         super(Imc, self).save(*args, **kwargs)
