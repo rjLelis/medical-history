@@ -1,11 +1,39 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import date
+
+
+class Profile(models.Model):
+
+    username = models.CharField(max_length=50, unique=True)
+
+    first_name = models.CharField(max_length=50)
+
+    last_name = models.CharField(max_length=50)
+
+    date_of_birth = models.DateField()
+
+    email = models.EmailField()
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+
+    def __str__(self):
+        return f'<Profile: {self.username}> \
+            {self.first_name} {self.last_name}'
+
 
 class WeightHistory(models.Model):
 
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        Profile,
+        related_name='weight_history',
+        on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.user!s}\'s weight'
 
 
 class Imc(models.Model):
@@ -37,7 +65,12 @@ class Imc(models.Model):
     )
     imc = models.DecimalField(max_digits=4, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        Profile,
+        related_name='imc',
+        on_delete=models.CASCADE,
+        unique=True
+    )
 
 
     def switch_imc(self):
@@ -59,5 +92,9 @@ class Imc(models.Model):
 
     def save(self, *args, **kwargs):
         self.imc = self.current_weight / (self.current_height ** 2)
-        self.set_imc_classification()
+        self.switch_imc()
         super(Imc, self).save(*args, **kwargs)
+
+
+    def __str__(self):
+        return f'{self.user!s}\'s imc'
