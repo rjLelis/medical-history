@@ -3,9 +3,10 @@ from datetime import date
 from rest_framework import status
 from rest_framework import serializers
 from rest_framework.response import Response
+from django.db import transaction
 
-from . import utils
 from .models import Imc, Profile, WeightHistory
+from .serializers_utils import BaseProfile
 
 
 class WeightHistorySerializer(serializers.ModelSerializer):
@@ -22,12 +23,15 @@ class ImcSerializer(serializers.ModelSerializer):
     height = serializers.DecimalField(
         source='current_height',
         max_digits=4,
-        decimal_places=2
+        decimal_places=2,
+        required=False
     )
+
     weight = serializers.DecimalField(
         source='current_weight',
         max_digits=5,
-        decimal_places=2
+        decimal_places=2,
+        required=False
     )
 
     imc = serializers.DecimalField(
@@ -46,7 +50,8 @@ class ImcSerializer(serializers.ModelSerializer):
         fields = ('height', 'weight', 'imc', 'classificacao_imc', )
 
 
-class ProfileWeightSerializer(serializers.ModelSerializer):
+class ProfileWeightSerializer(serializers.ModelSerializer,
+    BaseProfile):
 
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
@@ -59,15 +64,8 @@ class ProfileWeightSerializer(serializers.ModelSerializer):
         fields = ('username', 'full_name', 'age', 'email' ,'weight_history')
 
 
-    def get_full_name(self, obj):
-        return utils.get_profile_full_name(obj)
-
-
-    def get_age(self, obj):
-        return utils.get_profile_age(obj)
-
-
-class ProfileImcSerializer(serializers.ModelSerializer):
+class ProfileImcSerializer(serializers.ModelSerializer,
+    BaseProfile):
 
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
@@ -80,15 +78,8 @@ class ProfileImcSerializer(serializers.ModelSerializer):
         fields = ('username', 'full_name', 'age', 'email', 'imc')
 
 
-    def get_full_name(self, obj):
-        return utils.get_profile_full_name(obj)
-
-
-    def get_age(self, obj):
-        return utils.get_profile_age(obj)
-
-
-class ProfileWeightImcSerializer(serializers.ModelSerializer):
+class ProfileWeightImcSerializer(serializers.ModelSerializer,
+    BaseProfile):
 
     full_name = serializers.SerializerMethodField(
         source='get_full_name',
@@ -100,11 +91,11 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    first_name = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True, required=False)
 
-    last_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True, required=False)
 
-    date_of_birth = serializers.DateField(write_only=True)
+    date_of_birth = serializers.DateField(write_only=True, required=False)
 
     imc = ImcSerializer()
 
@@ -129,19 +120,69 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer):
         )
 
 
-    def get_full_name(self, obj):
-        return utils.get_profile_full_name(obj)
-
-
-    def get_age(self, obj):
-        return utils.get_profile_age(obj)
-
-
     def create(self, validated_data):
+        # Todo: validations
         imc = validated_data.pop('imc')
 
         profile = Profile.objects.create(**validated_data)
 
         new_imc = Imc.objects.create(user=profile,**imc)
+
+        return profile
+
+    def update(self, instance, validated_data):
+
+        try:
+
+            imc_values = validated_data.pop('imc')
+
+            if imc_values:
+                current_height = imc_values.get(
+                    'current_height',
+                    instance.imc.current_height
+                )
+
+                current_weight = imc_values.get(
+                    'current_weight',
+                    instance.imc.current_weight
+                )
+
+                imc = Imc.objects.get(user=instance)
+                imc.current_height = current_height
+                imc.current_weight = current_weight
+                imc.save()
+
+
+            profile = Profile.objects.get(username=instance.username)
+
+            profile_first_name = validated_data.pop(
+                'first_name',
+                instance.first_name
+            )
+
+            profile_last_name = validated_data.pop(
+                'last_name',
+                instance.last_name
+            )
+
+            profile_date_of_birth = validated_data.pop(
+                'date_of_birth',
+                instance.date_of_birth
+            )
+
+            profile_email = validated_data.pop(
+                'email',
+                instance.email
+            )
+
+            profile.first_name = profile_first_name
+            profile.last_name = profile_last_name
+            profile.date_of_birth = profile_date_of_birth
+            profile.email = profile_email
+
+            profile.save()
+
+        except Profile.DoesNotExist:
+            return Response()
 
         return profile
