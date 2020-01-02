@@ -11,7 +11,7 @@ class Profile(models.Model):
 
     last_name = models.CharField(max_length=50)
 
-    date_of_birth = models.DateField()
+    date_of_birth = models.DateField(null=True)
 
     email = models.EmailField()
 
@@ -57,14 +57,20 @@ class Imc(models.Model):
     )
 
     current_height = models.DecimalField(max_digits=4, decimal_places=2)
+
     current_weight = models.DecimalField(max_digits=5, decimal_places=2)
+
     classificacao = models.CharField(
         max_length=25,
         choices=CLASSIFICACAO,
-        default=PESO_NORMAL
+        default=PESO_NORMAL,
+        null=True
     )
-    imc = models.DecimalField(max_digits=4, decimal_places=2)
+
+    imc = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
     user = models.OneToOneField(
         Profile,
         related_name='imc',
@@ -73,7 +79,7 @@ class Imc(models.Model):
     )
 
 
-    def switch_imc(self):
+    def set_classificacao(self):
         if self.imc < 17:
             self.classificacao = self.PESO_MUITO_ABAIXO
         elif self.imc >= 17 and self.imc <= 18.49:
@@ -92,7 +98,7 @@ class Imc(models.Model):
 
     def save(self, *args, **kwargs):
         self.imc = self.current_weight / (self.current_height ** 2)
-        self.switch_imc()
+        self.set_classificacao()
         super(Imc, self).save(*args, **kwargs)
 
 
