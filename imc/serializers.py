@@ -1,9 +1,7 @@
 from datetime import date
 
-from rest_framework import status
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.response import Response
-from django.db import transaction
 
 from .models import Imc, Profile, WeightHistory
 from .serializers_utils import BaseProfile
@@ -23,15 +21,13 @@ class ImcSerializer(serializers.ModelSerializer):
     height = serializers.DecimalField(
         source='current_height',
         max_digits=4,
-        decimal_places=2,
-        required=False
+        decimal_places=2
     )
 
     weight = serializers.DecimalField(
         source='current_weight',
         max_digits=5,
-        decimal_places=2,
-        required=False
+        decimal_places=2
     )
 
     imc = serializers.DecimalField(
@@ -61,7 +57,7 @@ class ProfileWeightSerializer(serializers.ModelSerializer,
 
     class Meta:
         model = Profile
-        fields = ('username', 'full_name', 'age', 'email' ,'weight_history')
+        fields = ('username', 'full_name', 'age', 'email', 'weight_history')
 
 
 class ProfileImcSerializer(serializers.ModelSerializer,
@@ -91,9 +87,9 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
         read_only=True
     )
 
-    first_name = serializers.CharField(write_only=True, required=False)
+    first_name = serializers.CharField(write_only=True)
 
-    last_name = serializers.CharField(write_only=True, required=False)
+    last_name = serializers.CharField(write_only=True)
 
     date_of_birth = serializers.DateField(write_only=True, required=False)
 
@@ -101,7 +97,6 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
 
     weight_history = WeightHistorySerializer(
         many=True,
-        required=False,
         read_only=True
     )
 
@@ -121,14 +116,48 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
 
 
     def create(self, validated_data):
-        # Todo: validations
+
         imc = validated_data.pop('imc')
 
         profile = Profile.objects.create(**validated_data)
 
-        new_imc = Imc.objects.create(user=profile,**imc)
+        Imc.objects.create(user=profile,**imc)
 
         return profile
+
+
+class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
+    BaseProfile):
+
+
+    full_name = serializers.SerializerMethodField(
+        source='get_full_name',
+        read_only=True
+    )
+
+    age = serializers.SerializerMethodField(
+        source='get_age',
+        read_only=True
+    )
+
+    date_of_birth = serializers.DateField(write_only=True)
+
+    imc = ImcSerializer()
+
+    weight_history = WeightHistorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = (
+            'full_name',
+            'age',
+            'first_name',
+            'last_name',
+            'date_of_birth',
+            'email',
+            'imc',
+            'weight_history',
+        )
 
     def update(self, instance, validated_data):
 
@@ -151,7 +180,6 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
                 imc.current_height = current_height
                 imc.current_weight = current_weight
                 imc.save()
-
 
             profile = Profile.objects.get(username=instance.username)
 
@@ -182,7 +210,10 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
 
             profile.save()
 
-        except Profile.DoesNotExist:
-            return Response()
+        except (Profile.DoesNotExist, Imc.DoesNotExist):
+
+            return Response({
+                'message': f'user with username {instance.username} not found'
+            }, status=status.HTTP_404_NOT_FOUND)
 
         return profile
