@@ -19,8 +19,7 @@ class Profile(models.Model):
 
 
     def __str__(self):
-        return f'<Profile: {self.username}> \
-            {self.first_name} {self.last_name}'
+        return f'<Profile: {self.username}> {self.first_name} {self.last_name}'
 
 
 class WeightHistory(models.Model):
