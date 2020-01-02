@@ -14,11 +14,15 @@ class ProfileWeightImcListCreateView(generics.ListCreateAPIView):
     ordering = ('-created_at', )
 
 
-class ProfileWeightImcRetrieveView(generics.RetrieveUpdateAPIView):
+class ProfileWeightImcRetrieveUpdateView(generics.RetrieveUpdateAPIView):
 
     queryset = Profile.objects.all()
-    serializer_class = imc_serializers.ProfileWeightImcSerializer
     lookup_field = 'username'
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return imc_serializers.ProfileWeightImcUpdateSerializer
+        return imc_serializers.ProfileWeightImcSerializer
 
 class ProfileImcRetrieveView(generics.RetrieveAPIView):
 
