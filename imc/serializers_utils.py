@@ -17,5 +17,6 @@ class BaseProfile:
         '''
         Use serializers.SerializerMethodField(source='get_age')
         '''
-        return date.today().year - obj.date_of_birth.year
+        return date.today().year - obj.date_of_birth.year \
+            if obj.date_of_birth is not None else ''
 
