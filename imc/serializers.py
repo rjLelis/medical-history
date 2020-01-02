@@ -4,16 +4,19 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from .models import Imc, Profile, WeightHistory
-from .serializers_utils import BaseProfile
+from . import serializers_utils
 
 
 class WeightHistorySerializer(serializers.ModelSerializer):
 
-    date = serializers.DateTimeField(source='created_at')
+    date = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = WeightHistory
         fields = ('weight', 'date')
+        extra_kwargs = {
+            'weight': {'read_only': True},
+        }
 
 
 class ImcSerializer(serializers.ModelSerializer):
@@ -30,12 +33,6 @@ class ImcSerializer(serializers.ModelSerializer):
         decimal_places=2
     )
 
-    imc = serializers.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        read_only=True
-    )
-
     classificacao_imc = serializers.CharField(
         source='get_classificacao_display',
         read_only=True
@@ -44,10 +41,13 @@ class ImcSerializer(serializers.ModelSerializer):
     class Meta:
         model = Imc
         fields = ('height', 'weight', 'imc', 'classificacao_imc', )
+        extra_kwargs = {
+            'imc': {'read_only': True}
+        }
 
 
 class ProfileWeightSerializer(serializers.ModelSerializer,
-    BaseProfile):
+    serializers_utils.BaseProfile):
 
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
@@ -58,10 +58,14 @@ class ProfileWeightSerializer(serializers.ModelSerializer,
     class Meta:
         model = Profile
         fields = ('username', 'full_name', 'age', 'email', 'weight_history')
+        extra_kwargs = {
+            'username': {'read_only': True},
+            'email': {'read_only': True},
+        }
 
 
 class ProfileImcSerializer(serializers.ModelSerializer,
-    BaseProfile):
+    serializers_utils.BaseProfile):
 
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
@@ -72,10 +76,13 @@ class ProfileImcSerializer(serializers.ModelSerializer,
     class Meta:
         model = Profile
         fields = ('username', 'full_name', 'age', 'email', 'imc')
+        extra_kwargs = {
+            'username': {'read_only': True}
+        }
 
 
-class ProfileWeightImcSerializer(serializers.ModelSerializer,
-    BaseProfile):
+class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
+    serializers_utils.BaseProfile):
 
     full_name = serializers.SerializerMethodField(
         source='get_full_name',
@@ -87,17 +94,14 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
         read_only=True
     )
 
-    first_name = serializers.CharField(write_only=True)
+    imc_url = serializers.HyperlinkedIdentityField(
+        view_name='user-imc-retrieve',
+        lookup_field='username'
+    )
 
-    last_name = serializers.CharField(write_only=True)
-
-    date_of_birth = serializers.DateField(write_only=True, required=False)
-
-    imc = ImcSerializer()
-
-    weight_history = WeightHistorySerializer(
-        many=True,
-        read_only=True
+    weight_history_url = serializers.HyperlinkedIdentityField(
+        view_name='user-weight-history-retrieve',
+        lookup_field='username'
     )
 
     class Meta:
@@ -110,9 +114,22 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
             'full_name',
             'age',
             'email',
-            'imc',
-            'weight_history'
+            'url',
+            'imc_url',
+            'weight_history_url'
         )
+        extra_kwargs = {
+            'url': {
+                'view_name': 'user-retrieve-update',
+                'lookup_field': 'username'
+            },
+            'first_name': {'write_only': True},
+            'last_name': {'write_only': True},
+            'date_of_birth': {
+                'required': False,
+                'write_only': True
+            },
+        }
 
 
     def create(self, validated_data):
@@ -127,8 +144,7 @@ class ProfileWeightImcSerializer(serializers.ModelSerializer,
 
 
 class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
-    BaseProfile):
-
+    serializers_utils.BaseProfile):
 
     full_name = serializers.SerializerMethodField(
         source='get_full_name',
@@ -139,8 +155,6 @@ class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
         source='get_age',
         read_only=True
     )
-
-    date_of_birth = serializers.DateField(write_only=True)
 
     imc = ImcSerializer()
 
@@ -158,6 +172,9 @@ class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
             'imc',
             'weight_history',
         )
+        extra_kwargs = {
+            'date_of_birth': {'write_only': True}
+        }
 
     def update(self, instance, validated_data):
 
