@@ -1,10 +1,8 @@
 from django.db import models
 from django.utils import timezone
-from datetime import date
 
 
 class Profile(models.Model):
-
     username = models.CharField(max_length=50, unique=True)
 
     first_name = models.CharField(max_length=50)
@@ -17,13 +15,11 @@ class Profile(models.Model):
 
     created_at = models.DateTimeField(default=timezone.now)
 
-
     def __str__(self):
         return f'<Profile: {self.username}> {self.first_name} {self.last_name}'
 
 
 class WeightHistory(models.Model):
-
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
@@ -36,7 +32,6 @@ class WeightHistory(models.Model):
 
 
 class Imc(models.Model):
-
     PESO_MUITO_ABAIXO = 'PP'
     PESO_ABAIXO = 'P'
     PESO_NORMAL = 'M'
@@ -77,29 +72,26 @@ class Imc(models.Model):
         unique=True
     )
 
-
     def set_classificacao(self):
         if self.imc < 17:
             self.classificacao = self.PESO_MUITO_ABAIXO
-        elif self.imc >= 17 and self.imc <= 18.49:
+        elif 17 <= self.imc <= 18.49:
             self.classificacao = self.PESO_ABAIXO
-        elif self.imc >= 18.50 and self.imc <= 24.99:
+        elif 18.50 <= self.imc <= 24.99:
             self.classificacao = self.PESO_NORMAL
-        elif self.imc >= 25 and self.imc <= 29.99:
+        elif 25 <= self.imc <= 29.99:
             self.classificacao = self.PESO_ACIMA
-        elif self.imc >= 30 and self.imc <= 34.99:
+        elif 30 <= self.imc <= 34.99:
             self.classificacao = self.OBESIDADE_I
-        elif self.imc >= 35 and self.imc <= 39.99:
+        elif 35 <= self.imc <= 39.99:
             self.classificacao = self.OBESIDADE_II
         else:
             self.classificacao = self.OBESIDADE_III
-
 
     def save(self, *args, **kwargs):
         self.imc = self.current_weight / (self.current_height ** 2)
         self.set_classificacao()
         super(Imc, self).save(*args, **kwargs)
-
 
     def __str__(self):
         return f'{self.user!s}\'s imc'

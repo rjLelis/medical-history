@@ -8,7 +8,6 @@ from . import serializers_utils
 
 
 class WeightHistorySerializer(serializers.ModelSerializer):
-
     date = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
@@ -20,7 +19,6 @@ class WeightHistorySerializer(serializers.ModelSerializer):
 
 
 class ImcSerializer(serializers.ModelSerializer):
-
     height = serializers.DecimalField(
         source='current_height',
         max_digits=4,
@@ -40,15 +38,14 @@ class ImcSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Imc
-        fields = ('height', 'weight', 'imc', 'classificacao_imc', )
+        fields = ('height', 'weight', 'imc', 'classificacao_imc',)
         extra_kwargs = {
             'imc': {'read_only': True}
         }
 
 
 class ProfileWeightSerializer(serializers.ModelSerializer,
-    serializers_utils.BaseProfile):
-
+                              serializers_utils.BaseProfile):
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
     age = serializers.SerializerMethodField(source='get_age')
@@ -65,8 +62,7 @@ class ProfileWeightSerializer(serializers.ModelSerializer,
 
 
 class ProfileImcSerializer(serializers.ModelSerializer,
-    serializers_utils.BaseProfile):
-
+                           serializers_utils.BaseProfile):
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
     age = serializers.SerializerMethodField(source='get_age')
@@ -82,8 +78,7 @@ class ProfileImcSerializer(serializers.ModelSerializer,
 
 
 class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
-    serializers_utils.BaseProfile):
-
+                                 serializers_utils.BaseProfile):
     full_name = serializers.SerializerMethodField(
         source='get_full_name',
         read_only=True
@@ -131,21 +126,18 @@ class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
             },
         }
 
-
     def create(self, validated_data):
-
         imc = validated_data.pop('imc')
 
         profile = Profile.objects.create(**validated_data)
 
-        Imc.objects.create(user=profile,**imc)
+        Imc.objects.create(user=profile, **imc)
 
         return profile
 
 
 class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
-    serializers_utils.BaseProfile):
-
+                                       serializers_utils.BaseProfile):
     full_name = serializers.SerializerMethodField(
         source='get_full_name',
         read_only=True

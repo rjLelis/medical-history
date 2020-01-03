@@ -14,9 +14,8 @@ def create_weight_history(sender, instance, created, **kwargs):
     current_weight = WeightHistory.objects.filter(
         user=instance.user).order_by('-created_at').first()
     if current_weight and \
-        current_weight.weight != instance.current_weight:
+            current_weight.weight != instance.current_weight:
         WeightHistory.objects.create(
             weight=instance.current_weight,
             user=instance.user,
         )
-

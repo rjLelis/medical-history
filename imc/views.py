@@ -1,7 +1,8 @@
-from rest_framework import filters, generics, status
+from rest_framework import generics
+from rest_framework import viewsets
 from rest_framework import filters
 
-from .models import Imc, Profile, WeightHistory
+from .models import Profile
 from . import serializers as imc_serializers
 
 
@@ -24,6 +25,7 @@ class ProfileWeightImcRetrieveUpdateView(generics.RetrieveUpdateAPIView):
             return imc_serializers.ProfileWeightImcUpdateSerializer
         return imc_serializers.ProfileWeightImcSerializer
 
+
 class ProfileImcRetrieveView(generics.RetrieveAPIView):
 
     queryset = Profile.objects.all()
@@ -37,3 +39,8 @@ class ProfileWeightRetrieveView(generics.RetrieveAPIView):
     serializer_class = imc_serializers.ProfileWeightSerializer
     lookup_field = 'username'
 
+
+class ProfileViewset(viewsets.ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = imc_serializers.ProfileWeightImcSerializer
+    lookup_field = 'username'
