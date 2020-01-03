@@ -125,3 +125,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Rest Framework
+
+REST_FRAMEWORK = {
+    'DATE_INPUT_FORMAT': (
+        '%Y/%m/%d'
+        '%d/%m/%Y'
+    ),
+    'DATE_FORMAT': (
+        '%d/%m/%Y'
+    ),
+}
