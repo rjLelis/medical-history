@@ -30,6 +30,12 @@ class WeightHistory(models.Model):
     def __str__(self):
         return f'{self.user!s}\'s weight'
 
+    def save(self, *args, **kwargs):
+        super(WeightHistory, self).save(*args, **kwargs)
+        Imc.objects.filter(user=self.user).update(
+            current_weight=self.weight
+        )
+
 
 class Imc(models.Model):
     PESO_MUITO_ABAIXO = 'PP'
@@ -72,26 +78,30 @@ class Imc(models.Model):
         unique=True
     )
 
-    def set_classificacao(self):
-        if self.imc < 17:
+    def _set_classificacao(self, imc):
+        if imc < 17:
             self.classificacao = self.PESO_MUITO_ABAIXO
-        elif 17 <= self.imc <= 18.49:
+        elif 17 <= imc <= 18.49:
             self.classificacao = self.PESO_ABAIXO
-        elif 18.50 <= self.imc <= 24.99:
+        elif 18.50 <= imc <= 24.99:
             self.classificacao = self.PESO_NORMAL
-        elif 25 <= self.imc <= 29.99:
+        elif 25 <= imc <= 29.99:
             self.classificacao = self.PESO_ACIMA
-        elif 30 <= self.imc <= 34.99:
+        elif 30 <= imc <= 34.99:
             self.classificacao = self.OBESIDADE_I
-        elif 35 <= self.imc <= 39.99:
+        elif 35 <= imc <= 39.99:
             self.classificacao = self.OBESIDADE_II
         else:
             self.classificacao = self.OBESIDADE_III
 
     def save(self, *args, **kwargs):
         self.imc = self.current_weight / (self.current_height ** 2)
-        self.set_classificacao()
+        self._set_classificacao(self.imc)
         super(Imc, self).save(*args, **kwargs)
+        WeightHistory.objects.create(
+            weight=self.current_weight,
+            user=self.user
+        )
 
     def __str__(self):
         return f'{self.user!s}\'s imc'
