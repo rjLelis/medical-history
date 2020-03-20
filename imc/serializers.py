@@ -8,7 +8,10 @@ from . import serializers_utils
 
 
 class WeightHistorySerializer(serializers.ModelSerializer):
-    date = serializers.DateTimeField(source='created_at', read_only=True)
+    date = serializers.DateTimeField(
+        source='created_at',
+        format='%d/%m/%Y %H:%M:%S',
+        read_only=True)
 
     class Meta:
         model = WeightHistory
@@ -46,11 +49,20 @@ class ImcSerializer(serializers.ModelSerializer):
 
 class ProfileWeightSerializer(serializers.ModelSerializer,
                               serializers_utils.BaseProfile):
-    full_name = serializers.SerializerMethodField(source='get_full_name')
 
-    age = serializers.SerializerMethodField(source='get_age')
+    full_name = serializers.SerializerMethodField()
 
-    weight_history = WeightHistorySerializer(many=True, read_only=True)
+    age = serializers.SerializerMethodField()
+
+    weight_history = serializers.SerializerMethodField()
+
+    def get_weight_history(self, instance):
+        weight_history = instance.weight_history.all().order_by('-created_at')
+        return WeightHistorySerializer(
+            weight_history,
+            many=True,
+            read_only=True
+        ).data
 
     class Meta:
         model = Profile
@@ -63,6 +75,7 @@ class ProfileWeightSerializer(serializers.ModelSerializer,
 
 class ProfileImcSerializer(serializers.ModelSerializer,
                            serializers_utils.BaseProfile):
+
     full_name = serializers.SerializerMethodField(source='get_full_name')
 
     age = serializers.SerializerMethodField(source='get_age')
@@ -79,15 +92,10 @@ class ProfileImcSerializer(serializers.ModelSerializer,
 
 class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
                                  serializers_utils.BaseProfile):
-    full_name = serializers.SerializerMethodField(
-        source='get_full_name',
-        read_only=True
-    )
 
-    age = serializers.SerializerMethodField(
-        source='get_age',
-        read_only=True
-    )
+    full_name = serializers.SerializerMethodField(read_only=True)
+
+    age = serializers.SerializerMethodField(read_only=True)
 
     imc_url = serializers.HyperlinkedIdentityField(
         view_name='user-imc-retrieve',
@@ -138,19 +146,22 @@ class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
 
 class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
                                        serializers_utils.BaseProfile):
-    full_name = serializers.SerializerMethodField(
-        source='get_full_name',
-        read_only=True
-    )
 
-    age = serializers.SerializerMethodField(
-        source='get_age',
-        read_only=True
-    )
+    full_name = serializers.SerializerMethodField(read_only=True)
+
+    age = serializers.SerializerMethodField(read_only=True)
 
     imc = ImcSerializer()
 
-    weight_history = WeightHistorySerializer(many=True, read_only=True)
+    weight_history = serializers.SerializerMethodField()
+
+    def get_weight_history(self, instance):
+        weight_history = instance.weight_history.all().order_by('-created_at')
+        return WeightHistorySerializer(
+            weight_history,
+            many=True,
+            read_only=True
+        ).data
 
     class Meta:
         model = Profile
@@ -202,19 +213,19 @@ class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
                 instance.last_name
             )
 
-            profile_date_of_birth = validated_data.pop(
-                'date_of_birth',
-                instance.date_of_birth
-            )
 
             profile_email = validated_data.pop(
                 'email',
                 instance.email
             )
 
+            profile_date_of_birth = validated_data.pop('date_of_birth')
+
             profile.first_name = profile_first_name
             profile.last_name = profile_last_name
-            profile.date_of_birth = profile_date_of_birth
+            profile.date_of_birth = profile_date_of_birth \
+                if profile_date_of_birth else instance.date_of_birth
+
             profile.email = profile_email
 
             profile.save()
