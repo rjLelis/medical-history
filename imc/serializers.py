@@ -4,8 +4,6 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from .models import Imc, Profile, WeightHistory
-from . import serializers_utils
-
 
 class WeightHistorySerializer(serializers.ModelSerializer):
     date = serializers.DateTimeField(
@@ -47,12 +45,7 @@ class ImcSerializer(serializers.ModelSerializer):
         }
 
 
-class ProfileWeightSerializer(serializers.ModelSerializer,
-                              serializers_utils.BaseProfile):
-
-    full_name = serializers.SerializerMethodField()
-
-    age = serializers.SerializerMethodField()
+class ProfileWeightSerializer(serializers.ModelSerializer):
 
     weight_history = serializers.SerializerMethodField()
 
@@ -73,12 +66,7 @@ class ProfileWeightSerializer(serializers.ModelSerializer,
         }
 
 
-class ProfileImcSerializer(serializers.ModelSerializer,
-                           serializers_utils.BaseProfile):
-
-    full_name = serializers.SerializerMethodField(source='get_full_name')
-
-    age = serializers.SerializerMethodField(source='get_age')
+class ProfileImcSerializer(serializers.ModelSerializer):
 
     imc = ImcSerializer()
 
@@ -90,12 +78,7 @@ class ProfileImcSerializer(serializers.ModelSerializer,
         }
 
 
-class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
-                                 serializers_utils.BaseProfile):
-
-    full_name = serializers.SerializerMethodField(read_only=True)
-
-    age = serializers.SerializerMethodField(read_only=True)
+class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer):
 
     imc_url = serializers.HyperlinkedIdentityField(
         view_name='user-imc-retrieve',
@@ -144,12 +127,7 @@ class ProfileWeightImcSerializer(serializers.HyperlinkedModelSerializer,
         return profile
 
 
-class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer,
-                                       serializers_utils.BaseProfile):
-
-    full_name = serializers.SerializerMethodField(read_only=True)
-
-    age = serializers.SerializerMethodField(read_only=True)
+class ProfileWeightImcUpdateSerializer(serializers.ModelSerializer):
 
     imc = ImcSerializer()
 

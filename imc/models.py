@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 from django.utils import timezone
 
 
@@ -14,6 +15,16 @@ class Profile(models.Model):
     email = models.EmailField()
 
     created_at = models.DateTimeField(default=timezone.now)
+
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
+
+    @property
+    def age(self):
+        today = date.today()
+        return today.year - self.date_of_birth.year \
+            if self.date_of_birth is not None else ''
 
     def __str__(self):
         return f'<Profile: {self.username}> {self.first_name} {self.last_name}'
