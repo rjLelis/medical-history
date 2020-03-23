@@ -1,9 +1,8 @@
-from rest_framework import generics
-from rest_framework import viewsets
-from rest_framework import filters
+from rest_framework import filters, generics, viewsets
+from rest_framework.request import Request
 
-from .models import Profile
 from . import serializers as imc_serializers
+from .models import Profile
 
 
 class ProfileWeightImcListCreateView(generics.ListCreateAPIView):
